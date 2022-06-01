@@ -1,0 +1,8 @@
+<launch>
+
+  <!-- The talker node will publish a custom message. -->
+  <node pkg="rgbd-pub" type="frame_publisher" name="frame_publisher" output="screen">
+  
+  </node>
+
+</launch>
