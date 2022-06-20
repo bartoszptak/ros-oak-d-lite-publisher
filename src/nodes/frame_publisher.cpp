@@ -25,8 +25,9 @@ int main(int argc, char **argv)
     // setup cameras
     dai::Pipeline pipeline;
     std::vector<std::string> queueNames;
-
+  
     // Define sources and outputs
+    auto controlIn = pipeline.create<dai::node::XLinkIn>();
     auto camRgb = pipeline.create<dai::node::ColorCamera>();
     auto left = pipeline.create<dai::node::MonoCamera>();
     auto right = pipeline.create<dai::node::MonoCamera>();
@@ -35,6 +36,8 @@ int main(int argc, char **argv)
     auto rgbOut = pipeline.create<dai::node::XLinkOut>();
     auto depthOut = pipeline.create<dai::node::XLinkOut>();
 
+    controlIn->setStreamName("control");
+    
     rgbOut->setStreamName("rgb");
     queueNames.push_back("rgb");
 
@@ -61,25 +64,24 @@ int main(int argc, char **argv)
     stereo->setSubpixel(false);
     stereo->setDepthAlign(dai::CameraBoardSocket::RGB);
 
-    // auto config = stereo->initialConfig.get();
-    // config.postProcessing.speckleFilter.enable = false;
-    // config.postProcessing.speckleFilter.speckleRange = 50;
-    // config.postProcessing.temporalFilter.enable = true;
-    // config.postProcessing.spatialFilter.enable = true;
-    // config.postProcessing.spatialFilter.holeFillingRadius = 2;
-    // config.postProcessing.spatialFilter.numIterations = 1;
-    // config.postProcessing.thresholdFilter.minRange = 400;
-    // config.postProcessing.thresholdFilter.maxRange = 15000;
-    // config.postProcessing.decimationFilter.decimationFactor = 1;
-    // stereo->initialConfig.set(config);
-
     camRgb->isp.link(rgbOut->input);
     left->out.link(stereo->left);
     right->out.link(stereo->right);
 
+    controlIn->out.link(camRgb->inputControl);
+
     stereo->depth.link(depthOut->input);
 
     dai::Device device(pipeline);
+
+    auto controlQueue = device.getInputQueue("control");
+
+    int expTime = 20000;
+    int sensIso = 800;
+
+    dai::CameraControl ctrl;
+    ctrl.setManualExposure(expTime, sensIso);
+    controlQueue->send(ctrl);
 
     // Sets queues size and behavior
     for (const auto &name : queueNames)
