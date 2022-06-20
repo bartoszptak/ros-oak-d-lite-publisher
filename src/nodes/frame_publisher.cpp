@@ -58,19 +58,20 @@ int main(int argc, char **argv)
     stereo->setDefaultProfilePreset(dai::node::StereoDepth::PresetMode::HIGH_DENSITY);
     stereo->setLeftRightCheck(true);
     stereo->setExtendedDisparity(true);
+    stereo->setSubpixel(false);
     stereo->setDepthAlign(dai::CameraBoardSocket::RGB);
 
-    auto config = stereo->initialConfig.get();
-    config.postProcessing.speckleFilter.enable = false;
-    config.postProcessing.speckleFilter.speckleRange = 50;
-    config.postProcessing.temporalFilter.enable = true;
-    config.postProcessing.spatialFilter.enable = true;
-    config.postProcessing.spatialFilter.holeFillingRadius = 2;
-    config.postProcessing.spatialFilter.numIterations = 1;
-    config.postProcessing.thresholdFilter.minRange = 400;
-    config.postProcessing.thresholdFilter.maxRange = 15000;
-    config.postProcessing.decimationFilter.decimationFactor = 1;
-    stereo->initialConfig.set(config);
+    // auto config = stereo->initialConfig.get();
+    // config.postProcessing.speckleFilter.enable = false;
+    // config.postProcessing.speckleFilter.speckleRange = 50;
+    // config.postProcessing.temporalFilter.enable = true;
+    // config.postProcessing.spatialFilter.enable = true;
+    // config.postProcessing.spatialFilter.holeFillingRadius = 2;
+    // config.postProcessing.spatialFilter.numIterations = 1;
+    // config.postProcessing.thresholdFilter.minRange = 400;
+    // config.postProcessing.thresholdFilter.maxRange = 15000;
+    // config.postProcessing.decimationFilter.decimationFactor = 1;
+    // stereo->initialConfig.set(config);
 
     camRgb->isp.link(rgbOut->input);
     left->out.link(stereo->left);
@@ -88,6 +89,8 @@ int main(int argc, char **argv)
 
     std::unordered_map<std::string, cv::Mat> frame;
     sensor_msgs::ImagePtr msg;
+
+    std::cout << "Node started" << std::endl;
 
     while (ros::ok())
     {
@@ -112,6 +115,7 @@ int main(int argc, char **argv)
                 if (name == "depth")
                 {
                     frame[name] = latestPacket[name]->getFrame();
+                    frame[name].convertTo(frame[name], CV_16UC1);
                     msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", frame[name]).toImageMsg();
                     depth_pub.publish(msg);
                 }
