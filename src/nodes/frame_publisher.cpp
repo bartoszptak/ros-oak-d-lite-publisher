@@ -74,14 +74,14 @@ int main(int argc, char **argv)
 
     dai::Device device(pipeline);
 
-    auto controlQueue = device.getInputQueue("control");
+    // auto controlQueue = device.getInputQueue("control");
 
-    int expTime = 20000;
-    int sensIso = 800;
+    // int expTime = 200;
+    // int sensIso = 800;
 
-    dai::CameraControl ctrl;
-    ctrl.setManualExposure(expTime, sensIso);
-    controlQueue->send(ctrl);
+    // dai::CameraControl ctrl;
+    // ctrl.setManualExposure(expTime, sensIso);
+    // controlQueue->send(ctrl);
 
     // Sets queues size and behavior
     for (const auto &name : queueNames)
