@@ -7,7 +7,7 @@
 #include "depthai/depthai.hpp"
 
 
-static constexpr int fps = 30;
+static constexpr int fps = 35;
 static constexpr auto monoRes = dai::MonoCameraProperties::SensorResolution::THE_480_P;
 
 
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
     camRgb->setResolution(dai::ColorCameraProperties::SensorResolution::THE_1080_P);
     camRgb->setFps(fps);
     camRgb->setColorOrder(dai::ColorCameraProperties::ColorOrder::RGB);
-    camRgb->setIspScale(1, 3, 4, 9);
+    camRgb->setIspScale(2, 3, 8, 9);
 
     left->setResolution(monoRes);
     left->setBoardSocket(dai::CameraBoardSocket::LEFT);
@@ -74,15 +74,6 @@ int main(int argc, char **argv)
 
     dai::Device device(pipeline);
 
-    // auto controlQueue = device.getInputQueue("control");
-
-    // int expTime = 200;
-    // int sensIso = 800;
-
-    // dai::CameraControl ctrl;
-    // ctrl.setManualExposure(expTime, sensIso);
-    // controlQueue->send(ctrl);
-
     // Sets queues size and behavior
     for (const auto &name : queueNames)
     {
@@ -92,7 +83,7 @@ int main(int argc, char **argv)
     std::unordered_map<std::string, cv::Mat> frame;
     sensor_msgs::ImagePtr msg;
 
-    std::cout << "Node started" << std::endl;
+    std::cout << "Camera node started" << std::endl;
 
     while (ros::ok())
     {
@@ -113,11 +104,11 @@ int main(int argc, char **argv)
         {
             if (latestPacket.find(name) != latestPacket.end())
             {
-            
                 if (name == "depth")
                 {
                     frame[name] = latestPacket[name]->getFrame();
                     frame[name].convertTo(frame[name], CV_16UC1);
+
                     msg = cv_bridge::CvImage(std_msgs::Header(), "mono16", frame[name]).toImageMsg();
                     depth_pub.publish(msg);
                 }
@@ -125,7 +116,12 @@ int main(int argc, char **argv)
                 {
                     frame[name] = latestPacket[name]->getCvFrame();
                     frame[name].convertTo(frame[name], CV_8UC3);
-                    msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame[name]).toImageMsg();
+
+                    cv::Mat dst;
+                    cv::flip(frame[name], dst, -1); 
+                    cv::cvtColor(dst, dst, CV_BGR2RGB);
+
+                    msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", dst).toImageMsg();
                     rgb_pub.publish(msg);
                 }
             }
